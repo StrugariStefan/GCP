@@ -9,23 +9,23 @@ import sys
 global graph
 graph = reader.read_instance('./data/fpsol2.i.1.col')
 
-def genetic_algorithm(function, improvement_method, low, high, dimensions, population_size, crossover_prob, tournament_size):
-    reset_count = 1
-    mutation_prob = 0.1
+def genetic_algorithm(function, colors, population_size, mutation_prob, crossover_prob, tournament_size):
     best_state_overall = None
     best_value_overall = sys.maxsize
-    population = generate_initial_population(population_size, dimensions)
+    population = generate_initial_population(population_size, colors)
 
-    for i in range(0, 100):
-        initial_timer = time.perf_counter()
-        fitness = [(function(scale(value, bites_number, low, high)), index) for (index, value) in enumerate(population)]
+    for i in range(0, 2000):
+        fitness = [(function(value), index) for (index, value) in enumerate(population)]
         best_fitness_value = min(fitness)
 
         if(best_fitness_value[0] < best_value_overall):
             best_value_overall = best_fitness_value[0]
             best_state_overall = population[best_fitness_value[1]][:]
+        
+        if(best_fitness_value[0] == 0):
+            return(best_value_overall, best_state_overall)
 
-        new_population = [population[entry[1]] for entry in elites]
+        new_population = []
 
         while(len(new_population) < population_size):
 
@@ -38,33 +38,32 @@ def genetic_algorithm(function, improvement_method, low, high, dimensions, popul
                 first_parent, second_parent = get_crossover_state(first_parent, second_parent)
 
             if(random.random() < mutation_prob):
-                first_parent = random_mutation(first_parent)
-                second_parent = random_mutation(second_parent)
-
-            new_population.append(first_parent)
-            new_population.append(second_parent)
+                first_parent = get_random_mutation(first_parent)
+                second_parent = get_random_mutation(second_parent)
+                
+            new_population.extend(first_parent)
+            new_population.extend(second_parent)
 
     return(best_value_overall, best_state_overall)
 
-def get_crossover_children(first_parent, second_parent):
-    cutting_point = random.randint(0, bites_number - 2)
-    common_gene = first_parent ^ second_parent
-    bit_mask = (1 << bites_number - cutting_point - 1) - 1
-    common_gene = common_gene & bit_mask
-    return(first_parent ^ common_gene, second_parent ^ common_gene)
-
 def get_crossover_state(first_state, second_state):
-    new_first_state = [0] * len(first_state)
-    new_second_state = [0] * len(second_state)
-    for i in range(0, len(first_state)):
-        new_first_state[i], new_second_state[i] = get_crossover_children(first_state[i], second_state[i])
+    cutting_point = random.randint(1, len(first_state) - 1)
 
-    return (new_first_state, new_second_state)
+    first_child = first_state[0:cutting_point]
+    first_child.extend(second_state[cutting_point:])
+    second_child = second_state[0:cutting_point]
+    second_child.extend(first_state[cutting_point:])
 
-def random_mutation(individual):
-    for index in range(0,len(individual)):
-        mutation_index = random.randint(0, bites_number -  1)
-        individual[index] = individual[index] ^ (1 << mutation_index)
+    return (first_child , second_child)
+
+def get_random_mutation(individual):
+    for vertex in range(0, len(individual)):
+        if(has_bad_edge(vertex, individual)):
+            adjacent_colors = get_adjacent_colors(vertex, individual)
+            valid_colors = range(0, len(individual))
+            valid_colors = [color for color in valid_colors if color not in adjacent_colors]
+            new_color = random.sample(valid_colors, 1)
+            individual[vertex] = new_color[0]
 
     return individual
 
@@ -82,20 +81,44 @@ def tournament_selection(fitness_values, tournamet_size, tournament_rounds):
         suitors = random.sample(fitness_values, tournamet_size)
         best_suitor = min(suitors)
         selected_parents.append(best_suitor)
+    
+    return selected_parents
+
+def has_bad_edge(vertex, individual):
+    if(vertex + 1 not in graph.edges):
+        return False
+
+    neighbours = graph.edges[vertex + 1]
+    for neighbour in neighbours:
+        if(individual[vertex] == individual[neighbour - 1]):
+            return True
+
+    return False
+
+def get_adjacent_colors(vertex, individual):
+    neighbours = graph.edges[vertex + 1]
+    colors = []
+
+    for neighbour in neighbours:
+        colors.append(individual[neighbour - 1])
+
+    return colors
 
 def coloring_function(individual):
     visited = [0] * len(individual)
     bad_edges_counter = 0
-    for vertice in range(0, len(individual)):
-        if(vertice + 1 in graph.edges):
-            neighbours = graph.edges[vertice + 1]
+    for vertex in range(0, len(individual)):
+        if(vertex + 1 in graph.edges):
+            neighbours = graph.edges[vertex + 1]
             for neighbour in neighbours:
-                if(individual[vertice] == individual[neighbour - 1] and visited[vertice] == 0 and visited[neighbour - 1] == 0):
+                if(individual[vertex] == individual[neighbour - 1] and visited[vertex] == 0 and visited[neighbour - 1] == 0):
                     bad_edges_counter = bad_edges_counter + 1
-                    visited[vertice] = 1
+                    visited[vertex] = 1
                     visited[neighbour - 1] = 1
 
     return bad_edges_counter
 
-population = generate_initial_population(50, graph.vertex_count)
-print(coloring_function(population[0]))
+value, colors = genetic_algorithm(coloring_function, graph.vertex_count, 50, 0.1, 0.6, 6)
+
+ceva = set(colors)
+print(len(ceva))
