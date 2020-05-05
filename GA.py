@@ -7,18 +7,19 @@ import numpy as np
 import sys
 
 global graph
-graph = reader.read_instance('./data/myciel3.col')
+graph = reader.read_instance('./data/fpsol2.i.1.col')
 
 def genetic_algorithm(function, colors, population_size, mutation_prob, crossover_prob, tournament_size):
     best_state_overall = None
     best_value_overall = sys.maxsize
     population = generate_initial_population(population_size, colors)
 
-    for i in range(0, 1000):
+    for i in range(0, 5000):
         fitness = [(function(value), index) for (index, value) in enumerate(population)]
         best_fitness_value = min(fitness)
         elites = get_elites(fitness, int(population_size * 7 / 100))
-        print(best_fitness_value)
+
+        write_statistics(best_fitness_value)
 
         if(best_fitness_value[0] < best_value_overall):
             best_value_overall = best_fitness_value[0]
@@ -134,6 +135,11 @@ def get_adjacent_colors(vertex, individual):
 
     return colors
 
+def write_statistics(fitness_value):
+    file_handler= open("./fpsol2.i.1.col_stats", "a")
+    file_handler.write(str(fitness_value[0]) + "\n")
+    file_handler.close()
+
 def coloring_function(individual):
     bad_edges_counter = 0
     for vertex in range(0, len(individual)):
@@ -145,7 +151,7 @@ def coloring_function(individual):
 
     return (bad_edges_counter / 2) + len(set(individual))
 
-val, ceva = genetic_algorithm(coloring_function, graph.vertex_count, 50, 0.8, 0.3, 2)
+val, ceva = genetic_algorithm(coloring_function, graph.vertex_count, 50, 0.8, 0.5, 2)
 
 print(coloring_function(ceva) - len(set(ceva)))
 print(len(set(ceva)))
