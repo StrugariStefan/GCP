@@ -7,7 +7,7 @@ import numpy as np
 import sys
 
 global graph
-graph = reader.read_instance('./data/fpsol2.i.1.col')
+graph = reader.read_instance('./data/myciel3.col')
 
 def genetic_algorithm(function, colors, population_size, mutation_prob, crossover_prob, tournament_size):
     best_state_overall = None
@@ -136,7 +136,7 @@ def get_adjacent_colors(vertex, individual):
     return colors
 
 def write_statistics(fitness_value):
-    file_handler= open("./fpsol2.i.1.col_stats", "a")
+    file_handler= open("./myciel3_stats", "a")
     file_handler.write(str(fitness_value[0]) + "\n")
     file_handler.close()
 
@@ -151,12 +151,7 @@ def coloring_function(individual):
 
     return (bad_edges_counter / 2) + len(set(individual))
 
-val, ceva = genetic_algorithm(coloring_function, graph.vertex_count, 50, 0.8, 0.5, 2)
+colors, solution = genetic_algorithm(coloring_function, graph.vertex_count, 50, 0.8, 0.5, 2)
 
-print(coloring_function(ceva) - len(set(ceva)))
-print(len(set(ceva)))
-print(ceva)
-
-# population = generate_initial_population(50, graph.vertex_count)
-# print(coloring_function(population[0]))
-# print(coloring_function(get_random_mutation(population[0])))
+print(colors)
+print(solution)
