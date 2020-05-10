@@ -18,7 +18,19 @@ def swarm_optimization(function, dimensions, alfa, cognition, social, low, high)
     best_local_positions = [position[:] for position in positions]
     best_team_position = positions[np.argmin([function(position) for position in positions])][:]
 
+    omega = 0.1
+    fi = 0.1
+    alteration = 0.1
+
     for i in range(0,iterations):
+        fmin = function(min(positions, key = lambda p: function(p)))
+        fmax = function(max(positions, key = lambda p: function(p)))
+        favg = sum(map(function, positions)) / particles
+
+        lamb = alteration * (1 + fi * (fmax - fmin) ** omega - favg ** omega) / (((fmax - fmin) / favg) ** omega * (fmax - fmin) ** omega - favg ** omega)
+        cognition *= 1 - lamb
+        social *= 1 + lamb
+
         for particle in range(0,particles):
             for dimension in range(0, dimensions):
                 velocitys[particle][dimension] = alfa * velocitys[particle][dimension] + random.random() * cognition * (best_local_positions[particle][dimension] - positions[particle][dimension]) + random.random() * social * (best_team_position[dimension] - positions[particle][dimension])
