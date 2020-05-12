@@ -23,10 +23,12 @@ def swarm_optimization(function, dimensions, alfa, cognition, social, low, high)
             for dimension in range(0, dimensions):
                 velocitys[particle][dimension] = alfa * velocitys[particle][dimension] + random.random() * cognition * (best_local_positions[particle][dimension] - positions[particle][dimension]) + random.random() * social * (best_team_position[dimension] - positions[particle][dimension])
             positions[particle] = np.add(positions[particle], velocitys[particle])
-            if(function(positions[particle]) < function(best_local_positions[particle]) and has_bad_edge(positions[particle]) == False):
+            if(function(positions[particle]) < function(best_local_positions[particle])):
                 best_local_positions[particle] = positions[particle][:]
-                if(function(best_local_positions[particle]) < function(best_team_position)):
+                if(function(best_local_positions[particle]) < function(best_team_position) and has_bad_edge(best_local_positions[particle]) == False):
                     best_team_position = best_local_positions[particle][:]
+
+        write_statistics(function, function(best_team_position))
 
         if(alfa > 0.01):
             alfa = alfa - 0.0001
@@ -85,7 +87,7 @@ def has_bad_edge(individual_continous):
     return False
 
 def write_statistics(function, fitness_value):
-    file_handler= open("./time_stats_2_six", "a")
+    file_handler= open("./myciel5.col", "a")
     file_handler.write(function.__name__ + " " + str(fitness_value) + "\n")
     file_handler.close()
 
